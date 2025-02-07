@@ -7,7 +7,7 @@ export const useSocketStore = defineStore('socket', {
     }),
     actions: {
         connect() {
-            this.socket = io('http://localhost:9100')
+            this.socket = io('http://localhost:3000')
             this.socket.on('connect', () => {
                 console.log("connected"); 
 

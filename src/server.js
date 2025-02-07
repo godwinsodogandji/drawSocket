@@ -2,38 +2,43 @@ import { createServer } from "http";
 import express from 'express';
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import {Server} from 'socket.io';
+import { Server } from 'socket.io';
 
-const express = require('express');
-const { createServer } = require('http');
-const cors = require('cors');
-const { join } = require('path');
-
+// Port du serveur Express (par exemple, 3000)
 const port = 3000;
 const app = express();
-const serverHttp = createServer(app)
-const io = new Server(serverHttp) //server de websocket
-//chemin du fichier serveur en cours d'execution
+const serverHttp = createServer(app);
+
+// Configuration de Socket.io avec CORS
+const io = new Server(serverHttp, {
+  cors: {
+    origin: "http://localhost:5173",  
+    methods: ["GET", "POST"]
+  }
+});
+
+// Chemin du fichier serveur en cours d'exécution
 const __fileName = fileURLToPath(import.meta.url);
-//dossier parent du fichier server
 const __dirname = dirname(__fileName);
-//Middlwares
+
+// Middleware pour servir les fichiers statiques
 app.use(express.static(join(__dirname, "../dist")));
 
-//Ecoute de l'évenement connection
+// Écoute de l'événement connection
 io.on('connection', (socket) => {
-    console.log("Nouvelle connexion", socket.id);
+  console.log("Nouvelle connexion", socket.id);
 
-    socket.on('draw', (data) => {
-        socket.broadcast.emit('draw', {
-            data
-        })
-    })
-} )
+  socket.on('draw', (data) => {
+    socket.broadcast.emit('draw', { data });
+  });
+});
 
+// Route d'accueil
 app.get('/', (req, res) => {
-    res.sendFile(join(__dirname, "../dist", "index.html"));
-})
+  res.sendFile(join(__dirname, "../dist", "index.html"));
+});
+
+// Lancer le serveur sur le port 3000
 serverHttp.listen(port, () => {
-    console.log(`Le serveur tourne sur le port ${port}`)
-})
+  console.log(`Le serveur tourne sur le port ${port}`);
+});
