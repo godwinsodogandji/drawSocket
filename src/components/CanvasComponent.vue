@@ -11,15 +11,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { drawLine } from "@/utils/canvas";
-import { useSocket } from "@/stores/useSocket";
-import { useDrawingStore } from "@/stores/useDrawingStore";
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const toolbarRef = ref<HTMLDivElement | null>(null);
-const lastPoint = ref<{ x: number; y: number } | null>(null);
+import { ref, onMounted } from 'vue';
+import { drawLine } from '@/utils/canvas';
+import { useSocketStore } from '@/stores/useSocketStore';
+import { useDrawingStore } from '@/stores/useDrawingStore';
+const canvasRef = ref<HTMLCanvasElement | null >(null);
+const toolbarRef = ref<HTMLDivElement | null >(null);
+const lastPoint = ref<{x: number, y: number} | null>(null);
 const drawingStore = useDrawingStore();
-const socketStore = useSocket();
+const socketStore = useSocketStore();
 
 const resizeCanvas = () => {
   const toolbar = document.querySelector(".toolbar");
@@ -55,43 +55,37 @@ const draw = (e: MouseEvent) => {
   if (!drawingStore.isDrawing) return;
   const canvas = canvasRef.value;
 
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const ctx = canvas.getContext("2d");
-
-  if (!ctx) return;
-
-  const currentPoint = {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
-  };
-  if (!lastPoint.value) return;
-  drawLine(
-    ctx,
-    lastPoint.value,
-    currentPoint,
-    drawingStore.color,
-    drawingStore.lineWidth,
-    drawingStore.isEraser
-  );
-  socketStore.emit("draw", {
-    points: [lastPoint.value, currentPoint],
-    currentPoint,
-    color: drawingStore.color,
-    lineWidth: drawingStore.lineWidth,
-    isEraser: drawingStore.isEraser,
-  });
-
-  lastPoint.value = currentPoint;
-};
+    const currentPoint =  {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+    }
+    if(!lastPoint.value) return;
+    drawLine(ctx, lastPoint.value, currentPoint, drawingStore.color, drawingStore.lineWidth, drawingStore.isEraser);
+    socketStore.emit('draw', {
+        points: [lastPoint.value, currentPoint],
+        color: drawingStore.color,
+        lineWidth: drawingStore.lineWidth,
+        isEraser: drawingStore.isEraser
+    })
+    
+    lastPoint.value = currentPoint;
+}
 
 onMounted(() => {
-  socketStore.connect();
-  window.addEventListener("resize", resizeCanvas);
+    socketStore.connect();
 
-  resizeCanvas();
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-});
+    //Ecoute de l'évenement draw venant du serveur
+    socketStore.socket?.on('draw', (data) => {
+        console.log(data);
+        
+    })
+    window.addEventListener('resize', resizeCanvas);
+    
+    resizeCanvas();
+    const canvas = canvasRef.value;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    
+})
 </script>

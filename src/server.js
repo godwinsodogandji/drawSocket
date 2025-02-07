@@ -1,7 +1,8 @@
-// import express from 'express';
-// import { createServer } from 'node:http';
-// import { Server } from 'socket.io';
-// import { cors } from 'cors';
+import { createServer } from "http";
+import express from 'express';
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import {Server} from 'socket.io';
 
 const express = require('express');
 const { createServer } = require('http');
@@ -10,39 +11,29 @@ const { join } = require('path');
 
 const port = 3000;
 const app = express();
-const server = createServer(app);
+const serverHttp = createServer(app)
+const io = new Server(serverHttp) //server de websocket
+//chemin du fichier serveur en cours d'execution
+const __fileName = fileURLToPath(import.meta.url);
+//dossier parent du fichier server
+const __dirname = dirname(__fileName);
+//Middlwares
+app.use(express.static(join(__dirname, "../dist")));
 
-app.use(cors);
-app.use(express.static(join(__dirname, '../dist')));
-
-
-const io = require('socket.io')(4000,{
-  cors: {
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-  },
-});
-
+//Ecoute de l'évenement connection
 io.on('connection', (socket) => {
-  socket.emit('hello', 'Hello from server');
-  console.log('a user connected', socket.connected);
-  console.log("Socket Id :", socket.id);
-  socket.on('disconnect', () => {
-    console.log('user disconnected', socket.connected);
-  });
+    console.log("Nouvelle connexion", socket.id);
 
-  socket.on('draw', (data) => {
-    log(data);
-    socket.broadcast.emit('draw', data);
-  });
-});
+    socket.on('draw', (data) => {
+        socket.broadcast.emit('draw', {
+            data
+        })
+    })
+} )
 
 app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, '../dist/index.html'));
-  res.send('<h1>Hello  Socket io 🙌🙌</h1>');
-
-});
-
-server.listen(port, () => {
-  console.log('Le serveur écoute tranquillement sur  http://localhost:3000');
-});
+    res.sendFile(join(__dirname, "../dist", "index.html"));
+})
+serverHttp.listen(port, () => {
+    console.log(`Le serveur tourne sur le port ${port}`)
+})

@@ -14,4 +14,3 @@ app.use(router)
 
 app.mount('#app')
 
-// const socket = io('http://localhost:9100')
